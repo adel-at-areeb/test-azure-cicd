@@ -1,4 +1,3 @@
-
 trigger:
   branches:
     include:
@@ -37,28 +36,37 @@ stages:
       - job: BuildAndTest
         displayName: 'Install, Build, Test'
         steps:
-          - task: Npm@1
+          - task: NodeTool@0
             inputs:
-              command: 'install'
+              versionSpec: '20.x'
+            displayName: 'Install Node.js'
 
-            displayName: 'npm install'
-          - task: Npm@1
+          - task: npm@1
             inputs:
               command: 'ci'
-            displayName: 'npm build'
+            displayName: 'npm install'
 
-          - task: Npm@1
+          - task: npm@1
             inputs:
               command: 'custom'
               customCommand: 'test'
             displayName: 'Run unit tests'
 
+  - stage: Publish
+    displayName: 'Publish to Azure Artifacts'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - job: PublishPackage
+        displayName: 'Publish npm package'
+        steps:
           - task: Npm@1
             inputs:
               command: 'publish'
               publishRegistry: 'useFeed'
               publishFeed: 'ed84720b-777f-4a5b-8f90-a0b0d81c6d4b/3f29ac59-9f51-4020-a5ad-1a62b89c6193'
-              
+            displayName: 'Publish package to feed'
+
   - stage: Docker
     displayName: 'Build and Push to ECR'
     dependsOn: Build
@@ -70,8 +78,11 @@ stages:
           - task: Docker@2
             inputs:
               containerRegistry: 'ecr-registry'
-              repository: 'sandbox-reg'
+              repository: '$(imageName)'
               command: 'buildAndPush'
               Dockerfile: '**/Dockerfile'
               buildContext: '.'
+              tags: |
+                $(imageTag)
+                latest
             displayName: 'Build and push image to ECR'
