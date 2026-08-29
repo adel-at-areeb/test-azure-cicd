@@ -81,4 +81,7 @@ stages:
               command: 'buildAndPush'
               Dockerfile: '**/Dockerfile'
               buildContext: '.'
+              tags: |
+                $(imageTag)
+                latest
             displayName: 'Build and push image to ECR'
