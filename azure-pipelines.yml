@@ -9,7 +9,7 @@ pool: 'default'
 variables:
   - name: imageName
     value: 'pipeline-sandbox'
-  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+  - ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
       - name: environment
         value: 'production'
       - name: imageTag
@@ -18,7 +18,7 @@ variables:
         value: 'prod-app-service'
       - name: packageVersion
         value: '1.0.$(Build.BuildId)'
-  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/dev') }}:
+  - ${{ if eq(variables['Build.SourceBranchName'], 'dev') }}:
       - name: environment
         value: 'development'
       - name: imageTag
