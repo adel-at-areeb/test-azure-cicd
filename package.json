@@ -1,0 +1,18 @@
+{
+  "name": "devops-test-app",
+  "version": "1.0.0",
+  "description": "Minimal Node.js app for testing Azure DevOps pipelines",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest --ci --reporters=default --reporters=jest-junit"
+  },
+  "jest-junit": {
+    "outputDirectory": "test-results",
+    "outputName": "junit.xml"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-junit": "^16.0.0"
+  }
+}
