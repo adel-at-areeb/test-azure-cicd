@@ -1,5 +1,77 @@
-tr
-- task: Docker@2
-  inputs:
-    command: 'buildAndPush'
-    Dockerfile: '**/Dockerfile'
+
+trigger:
+  branches:
+    include:
+      - main
+      - dev
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - name: imageName
+    value: 'pipeline-sandbox'
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+      - name: environment
+        value: 'production'
+      - name: imageTag
+        value: 'prod-$(Build.BuildId)'
+      - name: deployTarget
+        value: 'prod-app-service'
+      - name: packageVersion
+        value: '1.0.$(Build.BuildId)'
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/dev') }}:
+      - name: environment
+        value: 'development'
+      - name: imageTag
+        value: 'dev-$(Build.BuildId)'
+      - name: deployTarget
+        value: 'dev-app-service'
+      - name: packageVersion
+        value: '1.0.$(Build.BuildId)-dev.$(Build.BuildId)'
+
+stages:
+  - stage: Build
+    displayName: 'Build and Test'
+    jobs:
+      - job: BuildAndTest
+        displayName: 'Install, Build, Test'
+        steps:
+          - task: Npm@1
+            inputs:
+              command: 'install'
+
+            displayName: 'npm install'
+          - task: Npm@1
+            inputs:
+              command: 'ci'
+            displayName: 'npm build'
+
+          - task: Npm@1
+            inputs:
+              command: 'custom'
+              customCommand: 'test'
+            displayName: 'Run unit tests'
+
+          - task: Npm@1
+            inputs:
+              command: 'publish'
+              publishRegistry: 'useFeed'
+              publishFeed: 'ed84720b-777f-4a5b-8f90-a0b0d81c6d4b/3f29ac59-9f51-4020-a5ad-1a62b89c6193'
+              
+  - stage: Docker
+    displayName: 'Build and Push to ECR'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - job: DockerBuildPush
+        displayName: 'Build image and push to ECR'
+        steps:
+          - task: Docker@2
+            inputs:
+              containerRegistry: 'ecr-registry'
+              repository: 'sandbox-reg'
+              command: 'buildAndPush'
+              Dockerfile: '**/Dockerfile'
+              buildContext: '.'
+            displayName: 'Build and push image to ECR'
