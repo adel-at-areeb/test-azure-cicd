@@ -4,8 +4,7 @@ trigger:
       - main
       - dev
 
-pool:
-  vmImage: 'ubuntu-latest'
+pool: 'default'
 
 variables:
   - name: imageName
